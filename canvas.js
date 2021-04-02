@@ -18,42 +18,67 @@ const COLORS = [
     ["#ffffff", "White"],
 ];
 
+// Thanks to https://jsfiddle.net/salman/f9Re3/
+function invertColor(hexTripletColor) {
+    var color = hexTripletColor;
+    color = color.substring(1);
+    color = parseInt(color, 16);
+    color = 0xFFFFFF ^ color;
+    color = color.toString(16);
+    color = ("000000" + color).slice(-6);
+    color = "#" + color;
+    return color;
+}
 
 class Canvas {
     constructor() {
         this.width = 320;
         this.height = 180;
         this.blockSize = 5;
+        this.picker = document.getElementById('colors').getContext('2d');
+        this.ctx = document.getElementById('canvas').getContext('2d');
+        this.currentColor = 15;
     }
 
-    drawTop() {
-        const ctx = document.getElementById('colors').getContext('2d');
-        ctx.fillStyle = 'lavender';
-        ctx.fillRect(0, 0, this.width, this.height / 2);
+    getColorPickerX(index) {
+        return (12 * index) + 5
+    }
 
-        ctx.fillStyle = 'black';
-        ctx.font = '16px serif';
-        ctx.fillText('Color Picker', 1, 16);
+    getColorPickerY(index) {
+        return (index % 2 === 0) ? 45 : 60
+    }
+
+    drawPicker() {
+        this.picker.fillStyle = 'lavender';
+        this.picker.fillRect(0, 0, this.width, this.height / 2);
+
+        this.picker.fillStyle = 'black';
+        this.picker.font = '16px serif';
+        this.picker.fillText('Color Picker', 1, 16);
 
         // Draw colors
-        for (let [i, color] of COLORS.entries()) {
-            ctx.fillStyle = color[0];
-            if (i % 2 === 0) {
-                ctx.fillRect((12 * i), 45, 12, 12);
-            } else {
-                ctx.fillRect((12 * i), 60, 12, 12);
-            }
+        for (let [index, color] of COLORS.entries()) {
+            this.picker.fillStyle = color[0];
+            this.picker.fillRect(this.getColorPickerX(index), this.getColorPickerY(index), 12, 12);
         }
     }
 
     drawCanvas() {
-        const ctx = document.getElementById('canvas').getContext('2d');
+        this.ctx.fillStyle = 'black';
+        this.ctx.fillRect(0, 0, this.width * this.blockSize, this.height * this.blockSize);
+    }
 
-        ctx.fillStyle = 'black';
-        ctx.fillRect(0, 0, this.width * this.blockSize, this.height * this.blockSize);
+    highlightCurrentColor() {
+        const index = this.currentColor;
+        this.picker.fillStyle = invertColor(COLORS[index][0]);
+        this.picker.fillRect(this.getColorPickerX(index) - 2, this.getColorPickerY(index) - 2, 16, 16);
+
+        this.picker.fillStyle = COLORS[index][0];
+        this.picker.fillRect(this.getColorPickerX(index), this.getColorPickerY(index), 12, 12);
     }
 }
 
 const c = new Canvas();
-c.drawTop();
+c.drawPicker();
 c.drawCanvas();
+c.highlightCurrentColor();
