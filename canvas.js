@@ -18,6 +18,12 @@ const COLORS = [
     ["#ffffff", "White"],
 ];
 
+const MOVE = {
+    STATIONARY: 0,
+    LEFT: 1,
+    RIGHT: 2
+}
+
 // Thanks to https://jsfiddle.net/salman/f9Re3/
 function invertColor(hexTripletColor) {
     var color = hexTripletColor;
@@ -38,6 +44,7 @@ class Canvas {
         this.picker = document.getElementById('colors').getContext('2d');
         this.ctx = document.getElementById('canvas').getContext('2d');
         this.currentColor = 15;
+        this.move = MOVE.STATIONARY;
     }
 
     getColorPickerX(index) {
@@ -56,6 +63,11 @@ class Canvas {
         this.picker.font = '16px serif';
         this.picker.fillText('Color Picker', 1, 16);
 
+        // Highlight current color
+        this.picker.fillStyle = invertColor(COLORS[this.currentColor][0]);
+        this.picker.fillRect(this.getColorPickerX(this.currentColor) - 2, this.getColorPickerY(this.currentColor) - 2, 16, 16);
+
+
         // Draw colors
         for (let [index, color] of COLORS.entries()) {
             this.picker.fillStyle = color[0];
@@ -68,17 +80,41 @@ class Canvas {
         this.ctx.fillRect(0, 0, this.width * this.blockSize, this.height * this.blockSize);
     }
 
-    highlightCurrentColor() {
-        const index = this.currentColor;
-        this.picker.fillStyle = invertColor(COLORS[index][0]);
-        this.picker.fillRect(this.getColorPickerX(index) - 2, this.getColorPickerY(index) - 2, 16, 16);
-
-        this.picker.fillStyle = COLORS[index][0];
-        this.picker.fillRect(this.getColorPickerX(index), this.getColorPickerY(index), 12, 12);
+    update() {
+        switch (this.move) {
+            case MOVE.LEFT:
+                this.currentColor = (this.currentColor === 0) ? 16 : this.currentColor - 1;
+                break;
+            case MOVE.RIGHT:
+                this.currentColor = (this.currentColor === 16) ? 0 : this.currentColor + 1;
+                break;
+            default:
+                break;
+        }
+        this.move = MOVE.STATIONARY;
     }
 }
 
 const c = new Canvas();
-c.drawPicker();
-c.drawCanvas();
-c.highlightCurrentColor();
+
+window.addEventListener("keydown", function (event) {
+    switch (Number(event.keyCode)) {
+        case 37:
+            c.move = MOVE.LEFT;
+            break;
+        case 39:
+            c.move = MOVE.RIGHT;
+            break;
+    }
+});
+
+window.addEventListener("keyup", function (event) {
+    c.move = MOVE.STATIONARY;
+});
+
+function render() {
+    c.update()
+    c.drawPicker();
+    c.drawCanvas();
+    this.setTimeout(render, 0);
+}
