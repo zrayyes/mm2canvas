@@ -76,7 +76,7 @@ class Canvas {
     }
 
     drawCanvas() {
-        this.ctx.fillStyle = 'black';
+        this.ctx.fillStyle = 'white';
         this.ctx.fillRect(0, 0, this.width * this.blockSize, this.height * this.blockSize);
     }
 
@@ -97,24 +97,90 @@ class Canvas {
 
 const c = new Canvas();
 
-window.addEventListener("keydown", function (event) {
-    switch (Number(event.keyCode)) {
-        case 37:
-            c.move = MOVE.LEFT;
-            break;
-        case 39:
-            c.move = MOVE.RIGHT;
-            break;
+const haveEvents = 'ongamepadconnected' in window;
+const controllers = {};
+
+function connecthandler(e) {
+    console.log("Gamepad detected.")
+    addgamepad(e.gamepad);
+}
+
+function addgamepad(gamepad) {
+    controllers[gamepad.index] = gamepad;
+    console.log(`Gamepad ${gamepad.index} added.`)
+    requestAnimationFrame(updateStatus);
+}
+
+function disconnecthandler(e) {
+    console.log(`Gamepad disconnected.`)
+    removegamepad(e.gamepad);
+}
+
+function removegamepad(gamepad) {
+    delete controllers[gamepad.index];
+    console.log(`Gamepad ${gamepad.index} deleted.`)
+}
+
+
+function updateStatus() {
+    if (!haveEvents) {
+        scangamepads();
     }
-});
 
-window.addEventListener("keyup", function (event) {
-    c.move = MOVE.STATIONARY;
-});
+    for (let j in controllers) {
+        const controller = controllers[j];
 
-function render() {
+        for (let i = 0; i < controller.buttons.length; i++) {
+            let val = controller.buttons[i];
+            let pressed = val == 1.0;
+            if (typeof (val) == "object") {
+                pressed = val.pressed;
+                val = val.value;
+            }
+
+            if (pressed) {
+                switch (i) {
+                    case 4: // L
+                        c.move = MOVE.LEFT;
+                        break;
+                    case 5: // R
+                        c.move = MOVE.RIGHT;
+                        break;
+                }
+            } else {
+                c.MOVE = MOVE.STATIONARY;
+            }
+        }
+
+        // for (let i = 0; i < controller.axes.length; i++) {
+        //     console.log(controller.axes[i].toFixed(4));
+        // }
+    }
+
+
     c.update()
     c.drawPicker();
     c.drawCanvas();
-    this.setTimeout(render, 0);
+    requestAnimationFrame(updateStatus);
+}
+
+function scangamepads() {
+    var gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : []);
+    for (let i = 0; i < gamepads.length; i++) {
+        if (gamepads[i]) {
+            if (gamepads[i].index in controllers) {
+                controllers[gamepads[i].index] = gamepads[i];
+            } else {
+                addgamepad(gamepads[i]);
+            }
+        }
+    }
+}
+
+window.addEventListener("gamepadconnected", connecthandler);
+window.addEventListener("gamepaddisconnected", disconnecthandler);
+
+
+if (!haveEvents) {
+    setInterval(scangamepads, 500);
 }
