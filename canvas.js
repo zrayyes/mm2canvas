@@ -1,40 +1,6 @@
-const COLORS = [
-    ["#fe1600", "Light red"],
-    ["#bb1000", "Dark red"],
-    ["#fff3d0", "Light brown"],
-    ["#ad7f46", "Dark brown"],
-    ["#fff001", "Yellow"],
-    ["#fec100", "Orange"],
-    ["#03d901", "Light green"],
-    ["#00bb00", "Dark green"],
-    ["#01e9ff", "Light blue"],
-    ["#000eff", "Dark blue"],
-    ["#ba62fe", "Light purple"],
-    ["#8617ba", "Dark purple"],
-    ["#fec0fd", "Light pink"],
-    ["#b81889", "Dark pink"],
-    ["#bbbabb", "Gray"],
-    ["#000000", "Black"],
-    ["#ffffff", "White"],
-];
+import { BUTTON } from "./buttons.js";
+import { invertColor, COLORS } from "./colors.js";
 
-const MOVE = {
-    STATIONARY: 0,
-    LEFT: 1,
-    RIGHT: 2
-}
-
-// Thanks to https://jsfiddle.net/salman/f9Re3/
-function invertColor(hexTripletColor) {
-    var color = hexTripletColor;
-    color = color.substring(1);
-    color = parseInt(color, 16);
-    color = 0xFFFFFF ^ color;
-    color = color.toString(16);
-    color = ("000000" + color).slice(-6);
-    color = "#" + color;
-    return color;
-}
 
 class Canvas {
     constructor() {
@@ -44,7 +10,7 @@ class Canvas {
         this.picker = document.getElementById('colors').getContext('2d');
         this.ctx = document.getElementById('canvas').getContext('2d');
         this.currentColor = 15;
-        this.move = MOVE.STATIONARY;
+        this.buttons = BUTTON.STATIONARY.value;
     }
 
     getColorPickerX(index) {
@@ -80,18 +46,20 @@ class Canvas {
         this.ctx.fillRect(0, 0, this.width * this.blockSize, this.height * this.blockSize);
     }
 
+    isButtonPressed(button) {
+        return (this.buttons & button.value) > 0
+    }
+
     update() {
-        switch (this.move) {
-            case MOVE.LEFT:
+        switch (true) {
+            case (this.isButtonPressed(BUTTON.L)):
                 this.currentColor = (this.currentColor === 0) ? 16 : this.currentColor - 1;
                 break;
-            case MOVE.RIGHT:
+            case (this.isButtonPressed(BUTTON.R)):
                 this.currentColor = (this.currentColor === 16) ? 0 : this.currentColor + 1;
                 break;
-            default:
-                break;
         }
-        this.move = MOVE.STATIONARY;
+        this.buttons = BUTTON.STATIONARY.value;
     }
 }
 
@@ -137,18 +105,12 @@ function updateStatus() {
                 pressed = val.pressed;
                 val = val.value;
             }
-
             if (pressed) {
-                switch (i) {
-                    case 4: // L
-                        c.move = MOVE.LEFT;
-                        break;
-                    case 5: // R
-                        c.move = MOVE.RIGHT;
-                        break;
+                for (const [_, button] of Object.entries(BUTTON)) {
+                    if (i === button.key) {
+                        c.buttons += button.value;
+                    }
                 }
-            } else {
-                c.MOVE = MOVE.STATIONARY;
             }
         }
 
